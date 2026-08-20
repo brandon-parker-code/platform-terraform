@@ -1,0 +1,21 @@
+# Copy to terraform.tfvars (gitignored) and fill in the subscription.
+subscription_id = "00000000-0000-0000-0000-000000000000"
+
+location    = "eastus"
+prefix      = "ecs"
+environment = "prod"
+
+github_org      = "brandon-parker-code"
+github_app_repo = "email-consumer-service"
+github_org_id   = "79738728"
+github_repo_id  = "1271894694"
+
+k8s_namespace       = "email-consumer-service"
+k8s_service_account = "email-consumer-service"
+
+aks_node_count = 2
+aks_vm_size    = "Standard_D2s_v7"
+
+# Optional extra Key Vault admin (the applying identity is always granted admin).
+# az ad signed-in-user show --query id -o tsv
+# key_vault_admin_object_id = ""
