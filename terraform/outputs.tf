@@ -62,3 +62,12 @@ output "k8s_namespace" {
 output "k8s_service_account" {
   value = var.k8s_service_account
 }
+
+output "log_analytics_workspace_name" {
+  value       = azurerm_log_analytics_workspace.this.name
+  description = "Azure Monitor / Container Insights workspace. Query ContainerLogV2 for pod stdout."
+}
+
+output "log_analytics_workspace_id" {
+  value = azurerm_log_analytics_workspace.this.id
+}

@@ -12,8 +12,14 @@ Provisions the **shared** Azure platform (AKS, ACR, Key Vault, identities). Mult
 - `AcrPush` for the GitHub Actions identity
 - `Key Vault Secrets User` for the workload identity
 - `Key Vault Administrator` for the identity running Terraform (plus optional extra admin)
+- Log Analytics + Container Insights (`oms_agent`) so pod console logs are queryable in Azure Monitor
 
-This stack does **not** create Key Vault secret values, the Helm chart, Flux, or GitHub Actions workflows.
+This stack does **not** create Key Vault secret values or GitHub Actions workflows. It **does** install the AKS Flux extension (source, kustomize, **helm**, and notification controllers) and points it at `cluster-gitops`.
+
+Do not also run `flux bootstrap`.
+
+Set `github_flux_token` in `terraform.tfvars` (gitignored) to a GitHub PAT with Contents: Read on `cluster-gitops` and `email-consumer-service-gitops`.
+
 
 Default AKS node size is `Standard_D2s_v7`. Some `eastus` subscriptions reject `Standard_D2s_v3`.
 

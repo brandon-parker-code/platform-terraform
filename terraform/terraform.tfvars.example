@@ -19,3 +19,8 @@ aks_vm_size    = "Standard_D2s_v7"
 # Optional extra Key Vault admin (the applying identity is always granted admin).
 # az ad signed-in-user show --query id -o tsv
 # key_vault_admin_object_id = ""
+
+# PAT with Contents: Read on cluster-gitops and email-consumer-service-gitops.
+# Do not commit terraform.tfvars.
+github_flux_token = ""
+cluster_gitops_url = "https://github.com/brandon-parker-code/cluster-gitops.git"

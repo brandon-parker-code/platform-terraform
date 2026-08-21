@@ -74,3 +74,15 @@ variable "key_vault_admin_object_id" {
   description = "Optional extra Entra object ID granted Key Vault Administrator. The identity running Terraform is always granted this role. Leave empty to skip."
   default     = ""
 }
+
+variable "cluster_gitops_url" {
+  type        = string
+  description = "HTTPS URL of the cluster GitOps repo (Flux source)."
+  default     = "https://github.com/brandon-parker-code/cluster-gitops.git"
+}
+
+variable "github_flux_token" {
+  type        = string
+  sensitive   = true
+  description = "GitHub PAT with Contents: Read on cluster-gitops and email-consumer-service-gitops. Used by the AKS Flux extension and the app GitRepository secret."
+}
