@@ -1,4 +1,7 @@
 # Copy to terraform.tfvars (gitignored) and fill in the subscription.
+# This file is the prod stack. Keep environment = "prod".
+# For a second environment, use a Terraform workspace + terraform.tfvars.dev
+# (see terraform.tfvars.dev.example). Never apply environment=dev in the prod workspace.
 subscription_id = "00000000-0000-0000-0000-000000000000"
 
 location    = "eastus"

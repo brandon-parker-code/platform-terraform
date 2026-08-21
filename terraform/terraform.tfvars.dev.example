@@ -1,0 +1,36 @@
+# Copy to terraform.tfvars.dev (gitignored). Apply only in workspace "dev":
+#   terraform workspace new dev   # first time
+#   terraform workspace select dev
+#   terraform apply -var-file=terraform.tfvars.dev
+#
+# Never apply this file in the prod/default workspace.
+# Fill shared_* from the prod workspace: terraform workspace select default && terraform output
+subscription_id = "00000000-0000-0000-0000-000000000000"
+
+location    = "eastus"
+prefix      = "ecs"
+environment = "dev"
+
+github_org      = "brandon-parker-code"
+github_app_repo = "email-consumer-service"
+github_org_id   = "79738728"
+github_repo_id  = "1271894694"
+
+k8s_namespace       = "email-consumer-service"
+k8s_service_account = "email-consumer-service"
+
+aks_node_count = 1
+aks_vm_size    = "Standard_D2s_v7"
+
+# Shared with prod (do not create a second ACR / workspace / GHA identity).
+shared_resource_group_name = "rg-ecs-prod"
+shared_acr_name            = "acrecsprodzr45"
+shared_log_analytics_name  = "log-ecs-prod-zr45"
+shared_gha_identity_name   = "id-ecs-prod-gha"
+
+# Optional extra Key Vault admin (the applying identity is always granted admin).
+# key_vault_admin_object_id = ""
+
+# PAT with Contents: Read on cluster-gitops and email-consumer-service-gitops.
+github_flux_token  = ""
+cluster_gitops_url = "https://github.com/brandon-parker-code/cluster-gitops.git"

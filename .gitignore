@@ -10,4 +10,7 @@ override.tf.json
 *_override.tf
 *_override.tf.json
 terraform.tfvars
+terraform.tfvars.dev
+terraform.tfvars.prod
+terraform.tfstate.d/
 .terraform.tfstate.lock.info

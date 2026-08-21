@@ -1,27 +1,26 @@
 # Terraform — AKS, ACR, Key Vault, identities
 
-Provisions the **shared** Azure platform (AKS, ACR, Key Vault, identities). Multiple apps can use this cluster. Resource names still use the original `ecs-prod` prefix until they are renamed.
+Provisions the Azure platform. **Prod** owns shared ACR, Log Analytics, and the GitHub Actions identity. **Dev** is a second AKS + Key Vault + workload identity in `rg-ecs-dev` that attaches to those shared resources.
 
-- Resource group `rg-ecs-prod`
-- ACR (Standard, admin disabled, unique suffix)
+- Resource group `rg-ecs-<env>` (AKS, Key Vault, workload identity)
+- Shared ACR in the prod RG (`AcrPull` on every cluster kubelet, `AcrPush` on the GHA identity)
 - AKS with OIDC issuer, Workload Identity, and the Key Vault Secrets Store CSI addon
-- Key Vault with Azure RBAC (no access policies), public access allowed
-- Workload user-assigned identity federated to `system:serviceaccount:email-consumer-service:email-consumer-service`
-- GitHub Actions user-assigned identity federated to `brandon-parker-code/email-consumer-service` (`main` and `environment:prod`)
-- `AcrPull` for the AKS kubelet identity
-- `AcrPush` for the GitHub Actions identity
-- `Key Vault Secrets User` for the workload identity
+- Key Vault per environment with Azure RBAC (same secret names in each vault)
+- Workload user-assigned identity federated to `system:serviceaccount:email-consumer-service:email-consumer-service` on **that** cluster
+- One GitHub Actions identity federated to `main`, `environment:prod`, and `environment:dev`
+- `Key Vault Secrets User` for the workload identity (that environment’s vault only)
 - `Key Vault Administrator` for the identity running Terraform (plus optional extra admin)
-- Log Analytics + Container Insights (`oms_agent` plus an explicit `MSCI-*` data collection rule). `oms_agent` alone deploys `ama-logs` but does not create the DCR, so stdout never reaches `ContainerLogV2`.
+- One Log Analytics workspace; each cluster has `oms_agent` plus its own `MSCI-*` DCR
 
-This stack does **not** create Key Vault secret values or GitHub Actions workflows. It **does** install the AKS Flux extension (source, kustomize, **helm**, and notification controllers) and points it at `cluster-gitops`.
+This stack does **not** create Key Vault secret values or GitHub Actions workflows. It **does** install the AKS Flux extension (source, kustomize, **helm**, and notification controllers) and points it at `cluster-gitops` path `./clusters/<environment>`.
 
 Do not also run `flux bootstrap`.
 
-Set `github_flux_token` in `terraform.tfvars` (gitignored) to a GitHub PAT with Contents: Read on `cluster-gitops` and `email-consumer-service-gitops`.
+Set `github_flux_token` in `terraform.tfvars` / `terraform.tfvars.dev` (gitignored) to a GitHub PAT with Contents: Read on `cluster-gitops` and `email-consumer-service-gitops`.
 
+**State:** prod and dev must be **different Terraform workspaces**. Applying `environment=dev` in the prod workspace is blocked, because it would replace prod. Cloud Shell local state is per workspace (`terraform.tfstate.d/`).
 
-Default AKS node size is `Standard_D2s_v7`. Some `eastus` subscriptions reject `Standard_D2s_v3`.
+Default AKS node size is `Standard_D2s_v7`. Some `eastus` subscriptions reject `Standard_D2s_v3`. Dev example uses 1 node; prod example uses 2.
 
 ## Prerequisites
 
@@ -37,6 +36,8 @@ Azure Cloud Shell (Bash) is enough; you do not need Terraform on your laptop.
 cd terraform
 cp terraform.tfvars.example terraform.tfvars
 ```
+
+Keep `environment = "prod"`. Leave the workspace as `default` (or `prod`).
 
 Set `subscription_id` to the subscription that should own the resources:
 
@@ -81,20 +82,56 @@ The vault is often **already created** when this happens (RBAC vault + provider 
 
 ## After apply
 
-Record these outputs as GitHub Actions variables/secrets on **email-consumer-service**:
+Record these outputs as GitHub Actions **variables** on **email-consumer-service**. **Prod and dev GitHub Environments use the same Azure values** (shared ACR and GHA identity):
 
 | Output (use this name in GitHub) | GitHub |
 | --- | --- |
-| `AZURE_CLIENT_ID` | Environment **prod** secret `AZURE_CLIENT_ID` |
-| `AZURE_TENANT_ID` | Environment **prod** secret `AZURE_TENANT_ID` |
-| `AZURE_SUBSCRIPTION_ID` | Environment **prod** secret `AZURE_SUBSCRIPTION_ID` |
-| `ACR_LOGIN_SERVER` | Repository or **prod** variable `ACR_LOGIN_SERVER` |
+| `AZURE_CLIENT_ID` | Environment variable `AZURE_CLIENT_ID` (both `prod` and `dev`) |
+| `AZURE_TENANT_ID` | Environment variable `AZURE_TENANT_ID` |
+| `AZURE_SUBSCRIPTION_ID` | Environment variable `AZURE_SUBSCRIPTION_ID` |
+| `ACR_LOGIN_SERVER` | Environment variable `ACR_LOGIN_SERVER` |
 
-`workload_identity_client_id` is used later as the Helm value for `azure.workload.identity/client-id`.
+`workload_identity_client_id` and `key_vault_name` are **per cluster**. Put those in that environment’s GitOps `values.yaml`, not in GitHub.
 
 ```bash
 az aks get-credentials --resource-group rg-ecs-prod --name aks-ecs-prod
 kubectl get nodes
+```
+
+### Dev environment
+
+Apply **prod first** so the shared ACR/workspace/GHA identity exist, including the `environment:dev` federated credential.
+
+Push `clusters/dev` in cluster-gitops and `apps/dev` in email-consumer-service-gitops **before** the Flux configuration can sync.
+
+```bash
+cd terraform
+terraform workspace select default
+terraform output acr_name
+terraform output log_analytics_workspace_name
+terraform output gha_identity_name
+
+cp terraform.tfvars.dev.example terraform.tfvars.dev
+# set subscription_id, github_flux_token, and shared_* from the outputs above
+
+terraform workspace new dev    # first time only
+terraform workspace select dev
+terraform plan  -var-file=terraform.tfvars.dev
+terraform apply -var-file=terraform.tfvars.dev
+```
+
+Then:
+
+```bash
+az aks get-credentials --resource-group rg-ecs-dev --name aks-ecs-dev --overwrite-existing
+```
+
+Fill `REPLACE_*` in `email-consumer-service-gitops/apps/dev/email-consumer-service/values.yaml` (workload identity, Key Vault, Kafka). Image repository stays the shared ACR. Create the four Key Vault secrets in the **dev** vault. Create GitHub Environment **dev** with the **same** Azure variables as prod, plus secret `GITOPS_TOKEN` if it is not already at repo level.
+
+Switch back to prod:
+
+```bash
+terraform workspace select default
 ```
 
 ### Existing cluster: import the portal DCR
@@ -115,11 +152,12 @@ terraform import azurerm_monitor_data_collection_rule_association.container_insi
 
 ## GitHub OIDC subjects
 
-GitHub includes numeric owner and repository ids in the token `sub` claim. Federated credentials are:
+GitHub includes numeric owner and repository ids in the token `sub` claim. Federated credentials on the **shared** identity `id-ecs-prod-gha`:
 
 - `repo:brandon-parker-code@79738728/email-consumer-service@1271894694:ref:refs/heads/main`
 - `repo:brandon-parker-code@79738728/email-consumer-service@1271894694:environment:prod`
+- `repo:brandon-parker-code@79738728/email-consumer-service@1271894694:environment:dev`
 
 If login fails with `AADSTS700213`, the assertion `sub` in the error must match these strings exactly. Update `github_org_id` / `github_repo_id` if GitHub shows different ids.
 
-Tag-triggered workflows should use the `prod` GitHub Environment so the environment subject matches.
+`v*` tag workflows use the **prod** GitHub Environment. **Deploy** to `dev` uses GitHub Environment **dev** (same `AZURE_CLIENT_ID`).

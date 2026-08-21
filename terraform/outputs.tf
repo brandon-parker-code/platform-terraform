@@ -15,12 +15,12 @@ output "aks_oidc_issuer_url" {
 }
 
 output "acr_name" {
-  value = azurerm_container_registry.this.name
+  value = local.acr_name
 }
 
 output "ACR_LOGIN_SERVER" {
-  value       = azurerm_container_registry.this.login_server
-  description = "GitHub Actions variable ACR_LOGIN_SERVER."
+  value       = local.acr_login_server
+  description = "Shared ACR. Same value for every GitHub Environment."
 }
 
 output "key_vault_name" {
@@ -50,9 +50,14 @@ output "workload_identity_name" {
   value = azurerm_user_assigned_identity.workload.name
 }
 
+output "gha_identity_name" {
+  value       = one(concat(azurerm_user_assigned_identity.gha[*].name, data.azurerm_user_assigned_identity.gha[*].name))
+  description = "Shared GitHub Actions identity name. Pass as shared_gha_identity_name when applying a non-prod workspace."
+}
+
 output "AZURE_CLIENT_ID" {
-  value       = azurerm_user_assigned_identity.gha.client_id
-  description = "GitHub Actions secret AZURE_CLIENT_ID (GitHub Actions managed identity)."
+  value       = local.gha_client_id
+  description = "Shared GitHub Actions identity. Same value for GitHub Environments prod and dev."
 }
 
 output "k8s_namespace" {
@@ -64,12 +69,12 @@ output "k8s_service_account" {
 }
 
 output "log_analytics_workspace_name" {
-  value       = azurerm_log_analytics_workspace.this.name
-  description = "Azure Monitor / Container Insights workspace. Query ContainerLogV2 for pod stdout."
+  value       = local.law_name
+  description = "Shared Azure Monitor workspace. Query ContainerLogV2; filter by cluster or namespace."
 }
 
 output "log_analytics_workspace_id" {
-  value = azurerm_log_analytics_workspace.this.id
+  value = local.law_id
 }
 
 output "container_insights_dcr_name" {

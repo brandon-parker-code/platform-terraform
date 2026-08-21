@@ -17,8 +17,13 @@ variable "prefix" {
 
 variable "environment" {
   type        = string
-  description = "Environment name (used in resource names and tags)."
+  description = "Environment name (used in resource names, tags, Flux path, and GitHub Environment federation). Must match the Terraform workspace (prod may use default)."
   default     = "prod"
+
+  validation {
+    condition     = contains(["dev", "prod"], var.environment)
+    error_message = "environment must be \"dev\" or \"prod\"."
+  }
 }
 
 variable "github_org" {
@@ -85,4 +90,28 @@ variable "github_flux_token" {
   type        = string
   sensitive   = true
   description = "GitHub PAT with Contents: Read on cluster-gitops and email-consumer-service-gitops. Used by the AKS Flux extension and the app GitRepository secret."
+}
+
+variable "shared_resource_group_name" {
+  type        = string
+  default     = ""
+  description = "Resource group that owns the shared ACR, Log Analytics workspace, and GitHub Actions identity. Empty uses rg-<prefix>-prod. Required conceptually for non-prod; ignored when environment is prod."
+}
+
+variable "shared_acr_name" {
+  type        = string
+  default     = ""
+  description = "Shared ACR name (prod output acr_name). Required when environment is not prod."
+}
+
+variable "shared_log_analytics_name" {
+  type        = string
+  default     = ""
+  description = "Shared Log Analytics workspace name (prod output log_analytics_workspace_name). Required when environment is not prod."
+}
+
+variable "shared_gha_identity_name" {
+  type        = string
+  default     = ""
+  description = "Shared GitHub Actions user-assigned identity name (prod output is id-<prefix>-prod-gha). Required when environment is not prod."
 }

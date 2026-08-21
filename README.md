@@ -1,10 +1,11 @@
 # AKS platform Terraform
 
-Shared Azure platform for **all** apps on this cluster (not just email-consumer-service):
+Shared Azure platform for **all** apps:
 
-- Resource group, AKS, ACR, Key Vault, workload identities, GitHub OIDC for CI
-- AKS **Flux** extension (includes helm-controller) syncing [cluster-gitops](https://github.com/brandon-parker-code/cluster-gitops)
-- **Container Insights** (pod stdout in a Log Analytics workspace, 30-day retention)
+- **Shared (prod RG):** ACR, Log Analytics workspace, GitHub Actions identity
+- **Per environment:** resource group, AKS, Key Vault, workload identity, Flux, Container Insights DCR
+
+`prod` and `dev` are **separate AKS clusters**. Use Terraform workspaces so they do not share state. Dev reuses prod ACR, workspace, and GHA identity.
 
 Do **not** run `flux bootstrap`. Terraform installs Flux. Helm is not a separate cluster install; Flux’s helm-controller applies HelmReleases.
 

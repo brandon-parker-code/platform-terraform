@@ -21,7 +21,7 @@ resource "azurerm_kubernetes_flux_configuration" "cluster" {
 
   kustomizations {
     name                       = "cluster"
-    path                       = "./clusters/prod"
+    path                       = "./clusters/${var.environment}"
     sync_interval_in_seconds   = 60
     retry_interval_in_seconds  = 60
     garbage_collection_enabled = true
