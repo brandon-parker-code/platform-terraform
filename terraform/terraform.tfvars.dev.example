@@ -19,17 +19,18 @@ github_repo_id  = "1271894694"
 k8s_namespace       = "email-consumer-service"
 k8s_service_account = "email-consumer-service"
 
-aks_node_count = 1
+# One D2s_v7 is ~2 vCPU; AKS system + Flux + Container Insights consume it.
+# Use 2 so the app pod can schedule.
+aks_node_count = 2
 aks_vm_size    = "Standard_D2s_v7"
 
 # Shared with prod (do not create a second ACR / workspace / GHA identity).
 shared_resource_group_name = "rg-ecs-prod"
-shared_acr_name            = "acrecsprodzr45"
-shared_log_analytics_name  = "log-ecs-prod-zr45"
+shared_acr_name            = "acrecsprodac5p"
+shared_log_analytics_name  = "log-ecs-prod-ac5p"
 shared_gha_identity_name   = "id-ecs-prod-gha"
 
-# Lost Cloud Shell state: pin the suffix Azure already assigned.
-name_suffix = "br6g"
+# name_suffix = "br6g"
 
 # Optional extra Key Vault admin (the applying identity is always granted admin).
 # key_vault_admin_object_id = ""
