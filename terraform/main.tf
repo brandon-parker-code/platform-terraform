@@ -16,6 +16,9 @@ locals {
   gha_client_id    = one(concat(azurerm_user_assigned_identity.gha[*].client_id, data.azurerm_user_assigned_identity.gha[*].client_id))
   gha_principal_id = one(concat(azurerm_user_assigned_identity.gha[*].principal_id, data.azurerm_user_assigned_identity.gha[*].principal_id))
 
+  # Pin after a lost Cloud Shell state so apply/import does not rename ACR/KV.
+  suffix = var.name_suffix != "" ? var.name_suffix : random_string.suffix.result
+
   tags = {
     project     = "email-consumer-service"
     environment = var.environment

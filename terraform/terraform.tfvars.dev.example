@@ -28,6 +28,9 @@ shared_acr_name            = "acrecsprodzr45"
 shared_log_analytics_name  = "log-ecs-prod-zr45"
 shared_gha_identity_name   = "id-ecs-prod-gha"
 
+# Lost Cloud Shell state: pin the suffix Azure already assigned.
+name_suffix = "br6g"
+
 # Optional extra Key Vault admin (the applying identity is always granted admin).
 # key_vault_admin_object_id = ""
 

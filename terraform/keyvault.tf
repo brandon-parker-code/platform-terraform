@@ -1,5 +1,5 @@
 resource "azurerm_key_vault" "this" {
-  name                          = "kv-${local.name}-${random_string.suffix.result}"
+  name                          = "kv-${local.name}-${local.suffix}"
   location                      = azurerm_resource_group.this.location
   resource_group_name           = azurerm_resource_group.this.name
   tenant_id                     = data.azurerm_client_config.current.tenant_id

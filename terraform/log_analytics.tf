@@ -1,7 +1,7 @@
 resource "azurerm_log_analytics_workspace" "this" {
   count = local.owns_shared ? 1 : 0
 
-  name                = "log-${local.name}-${random_string.suffix.result}"
+  name                = "log-${local.name}-${local.suffix}"
   location            = azurerm_resource_group.this.location
   resource_group_name = azurerm_resource_group.this.name
   sku                 = "PerGB2018"

@@ -8,6 +8,9 @@ location    = "eastus"
 prefix      = "ecs"
 environment = "prod"
 
+# After lost local state, pin the existing suffix so names stay kv-ecs-prod-zr45.
+# name_suffix = "zr45"
+
 github_org      = "brandon-parker-code"
 github_app_repo = "email-consumer-service"
 github_org_id   = "79738728"

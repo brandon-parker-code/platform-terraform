@@ -115,3 +115,9 @@ variable "shared_gha_identity_name" {
   default     = ""
   description = "Shared GitHub Actions user-assigned identity name (prod output is id-<prefix>-prod-gha). Required when environment is not prod."
 }
+
+variable "name_suffix" {
+  type        = string
+  default     = ""
+  description = "Four-character suffix already used in Azure names (e.g. zr45, br6g). Set this when recovering lost state so Terraform does not generate a new suffix. Leave empty only for a true greenfield apply."
+}

@@ -1,7 +1,7 @@
 resource "azurerm_container_registry" "this" {
   count = local.owns_shared ? 1 : 0
 
-  name                = "acr${var.prefix}${var.environment}${random_string.suffix.result}"
+  name                = "acr${var.prefix}${var.environment}${local.suffix}"
   resource_group_name = azurerm_resource_group.this.name
   location            = azurerm_resource_group.this.location
   sku                 = "Standard"
