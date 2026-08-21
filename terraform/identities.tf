@@ -79,8 +79,3 @@ moved {
   from = azurerm_federated_identity_credential.gha_environment_prod
   to   = azurerm_federated_identity_credential.gha_environment[0]
 }
-
-moved {
-  from = azurerm_federated_identity_credential.gha_environment
-  to   = azurerm_federated_identity_credential.gha_environment[0]
-}
