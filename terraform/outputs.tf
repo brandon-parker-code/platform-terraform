@@ -71,3 +71,8 @@ output "log_analytics_workspace_name" {
 output "log_analytics_workspace_id" {
   value = azurerm_log_analytics_workspace.this.id
 }
+
+output "container_insights_dcr_name" {
+  value       = azurerm_monitor_data_collection_rule.container_insights.name
+  description = "Container Insights data collection rule. Query ContainerLogV2 in the workspace above."
+}

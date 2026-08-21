@@ -12,7 +12,7 @@ Provisions the **shared** Azure platform (AKS, ACR, Key Vault, identities). Mult
 - `AcrPush` for the GitHub Actions identity
 - `Key Vault Secrets User` for the workload identity
 - `Key Vault Administrator` for the identity running Terraform (plus optional extra admin)
-- Log Analytics + Container Insights (`oms_agent`) so pod console logs are queryable in Azure Monitor
+- Log Analytics + Container Insights (`oms_agent` plus an explicit `MSCI-*` data collection rule). `oms_agent` alone deploys `ama-logs` but does not create the DCR, so stdout never reaches `ContainerLogV2`.
 
 This stack does **not** create Key Vault secret values or GitHub Actions workflows. It **does** install the AKS Flux extension (source, kustomize, **helm**, and notification controllers) and points it at `cluster-gitops`.
 
@@ -95,6 +95,22 @@ Record these outputs as GitHub Actions variables/secrets on **email-consumer-ser
 ```bash
 az aks get-credentials --resource-group rg-ecs-prod --name aks-ecs-prod
 kubectl get nodes
+```
+
+### Existing cluster: import the portal DCR
+
+If Container Insights was already repaired in the portal (`MSCI-eastus-aks-ecs-prod`), import it before `terraform apply`. Otherwise apply tries to create a rule that already exists.
+
+```bash
+SUB=$(az account show --query id -o tsv)
+RG=$(terraform output -raw resource_group_name)
+AKS=$(terraform output -raw aks_name)
+
+terraform import azurerm_monitor_data_collection_rule.container_insights \
+  "/subscriptions/${SUB}/resourceGroups/${RG}/providers/Microsoft.Insights/dataCollectionRules/MSCI-eastus-aks-ecs-prod"
+
+terraform import azurerm_monitor_data_collection_rule_association.container_insights \
+  "/subscriptions/${SUB}/resourceGroups/${RG}/providers/Microsoft.ContainerService/managedClusters/${AKS}/providers/Microsoft.Insights/dataCollectionRuleAssociations/ContainerInsightsExtension"
 ```
 
 ## GitHub OIDC subjects
